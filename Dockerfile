@@ -1,4 +1,4 @@
 FROM python:3.12-alpine
 WORKDIR /app
-COPY one-liner-2kb.sh /app/one-liner-2kb.sh
-CMD ["sh","/app/one-liner-2kb.sh"]
+COPY cosmic-love-infinity-tm.sh /app/cosmic-love-infinity-tm.sh
+CMD ["sh","/app/cosmic-love-infinity-tm.sh"]
