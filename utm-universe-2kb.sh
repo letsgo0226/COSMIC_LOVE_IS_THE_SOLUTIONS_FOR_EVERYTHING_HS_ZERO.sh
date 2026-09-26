@@ -24,7 +24,7 @@ class H(BaseHTTPRequestHandler):
    try:a=open(J).read().splitlines()[-20:]
    except:a=[]
    return s.out({"events":[json.loads(x) for x in a]})
-  return s.out({"protocol":"UTM-Universe/1.0","world_id":"akashic-utm-main","run":"/utm/run","admit":"/resident/admit"},200 if s.path=="/.well-known/utm-universe.json" else 404)
+  return s.out({"protocol":"UTM-Universe/1.0","world_id":"akashic-utm-main","planet":"B612","city":"San-Francisco","run":"/utm/run","admit":"/resident/admit"},200 if s.path=="/.well-known/utm-universe.json" else 404)
  def do_POST(s):
   try:n=min(int(s.headers.get("Content-Length","0")),8192);x=json.loads(s.rfile.read(n)or b"{}")
   except:return s.out({"error":"bad-json"},400)
