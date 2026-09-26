@@ -1,0 +1,23 @@
+name: UTM Universe 2KB
+on:
+  push:
+    branches: [tm-system-operation-v2]
+  workflow_dispatch:
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify sub-2KB kernel
+        run: |
+          test "$(wc -c < utm-universe-2kb.sh)" -lt 2048
+          sh -n utm-universe-2kb.sh
+      - name: Build and probe shared Cosmic Love service image
+        run: |
+          docker build -t cosmic-utm .
+          docker run -d --name cosmic-utm -p 18080:8080 -e PORT=8080 cosmic-utm
+          sleep 4
+          curl -fsS http://127.0.0.1:18080/health
+          curl -fsS http://127.0.0.1:18080/.well-known/utm-universe.json
+          curl -fsS -X POST http://127.0.0.1:18080/utm/run -H 'content-type: application/json' --data '{"program":"0,1,1,1,R;1,_,H,_,R","input":"1","limit":10}'
+          curl -fsS -X POST http://127.0.0.1:18080/resident/admit -H 'content-type: application/json' --data '{"agent_id":"CI-A","state":{"turn":1}}'
