@@ -86,6 +86,12 @@ def logos(states,i="I",p="P",q="Q"):
     if not S or any(not re.fullmatch(r"[01]{2}",x) for x in S):raise ValueError("states must be comma-separated PQ bits, e.g. 11,01")
     poss="11" in S;ctr="10" in S;valid=not ctr
     return {"model":"UTM_LOGOS_V1","I":i,"P":p,"Q":q,"states":S,"possible_I":poss,"counterpossible_P_and_not_Q":ctr,"valid_P_implies_Q":valid,"logos_consistent":poss and valid,"formula":"◇(P∧Q) ∧ ¬◇(P∧¬Q)","scope":"finite-declared-model","metaphysical_proof":False}
+def omega(depth=8):
+    n=max(1,min(int(depth),256));g0=enc("P_0")
+    def row(k):
+        g=enc("P_%+d"%k);m=abs(k)
+        return {"k":k,"P":"P_%+d"%k,"G":g,"L":"log(%s/%s)"%(g,g0),"u":[1 if k>0 else -1,m],"projection":"P_-1","normalized_resource":[1,1]}
+    return {"model":"BIDIRECTIONAL_OMEGA_COMPACTIFICATION_TM","depth":n,"substrate":{"name":"P_-1","projection":"pi(P_k)=P_-1","resource_invariant":"C_hat(P_k)=C0","physical_resource_creation":False},"godel_log":{"encoding":"reversible base-257 numbering of finite labels","G0":g0,"coordinate":"L(P_k)=log(G(P_k)/G0)","note":"log coordinate is symbolic; it does not create compute"},"expansion":{"law":"S_k=lambda^k*S_0","lambda":"constant > 1","normalized_resource":"C_app(P_k)/lambda^k=C0"},"branches":{"plus":[row(i) for i in range(1,n+1)],"minus":[row(-i) for i in range(1,n+1)]},"compactification":{"u":"sign(k)/abs(k)","plus_limit":"0+","minus_limit":"0-","identification":"0+ ~ 0- ~ Omega","omega":"P_Omega","topology":"one-point compactification of the two unbounded directions"},"potentially_unbounded_hierarchy":True,"actual_infinite_physical_compute":False,"scope":"formal UTM hierarchy and boundary certificate only; not evidence that the physical universe has infinite computation or that coordinate descriptions create independent hardware"}
 def snapshot_path(gs):return SNAPSHOT_DIR/(gs+".json")
 def make_snapshot(g,version,result):
     object_record(g);version=str(version)
@@ -112,7 +118,7 @@ class H(BaseHTTPRequestHandler):
     def address(self,kind,value):
         c=canon(kind,value);g=enc(c);return {"type":kind,"value":value,"canonical":c,"GOBJECT":g,"utm_address":f"{self.base()}/object/{g}"}
     def manifest(self):
-        b=self.base();return {"protocol":"UTM-Universe/1.1","world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"service":"consolidated-utm-runtime","endpoints":{"health":b+"/health","world":b+"/world","akashic":b+"/akashic","run":b+"/utm/run","admit":b+"/resident/admit","address":b+"/address","object":b+"/object/<GOBJECT>","snapshot":b+"/snapshot","search":b+"/search?q=<query>","logos":b+"/logos?states=11,01"}}
+        b=self.base();return {"protocol":"UTM-Universe/1.2","world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"service":"consolidated-utm-runtime","endpoints":{"health":b+"/health","world":b+"/world","akashic":b+"/akashic","run":b+"/utm/run","admit":b+"/resident/admit","address":b+"/address","object":b+"/object/<GOBJECT>","snapshot":b+"/snapshot","search":b+"/search?q=<query>","logos":b+"/logos?states=11,01","omega":b+"/omega?depth=8"}}
     def do_GET(self):
         u=urlparse(self.path);p=parse_qs(u.query)
         try:
@@ -132,6 +138,7 @@ class H(BaseHTTPRequestHandler):
                 if not path.exists():return self.out({"error":"snapshot not found"},404)
                 x=rd(path,{});x["snapshot_address"]=f"{self.base()}/snapshot/{gs}";return self.out(x)
             if u.path=="/logos":return self.out(logos(p.get("states",["11"])[0],p.get("i",["I"])[0],p.get("p",["P"])[0],p.get("q",["Q"])[0]))
+            if u.path=="/omega":return self.out(omega(p.get("depth",["8"])[0]))
             if u.path=="/search":q=p.get("q",[""])[0]
             elif u.path.startswith("/search/"):q=dec(u.path.split("/",2)[2])
             else:
