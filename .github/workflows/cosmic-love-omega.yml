@@ -1,0 +1,33 @@
+name: Cosmic Love Omega Certificate
+
+on:
+  push:
+    branches: [tm-system-operation-v2]
+    paths:
+      - cosmic_love_omega.py
+      - Dockerfile
+      - .github/workflows/cosmic-love-omega.yml
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile
+        run: python3 -m py_compile cosmic_love_omega.py
+      - name: Self-test
+        run: python3 cosmic_love_omega.py --self-test
+      - name: Verify finite-prefix certificate
+        run: |
+          python3 cosmic_love_omega.py --depth 4 > /tmp/cosmic-omega.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/cosmic-omega.json'))
+          assert x['model']=='COSMIC_LOVE_BIDIRECTIONAL_OMEGA_V1'
+          assert x['compactification']['identification']=='0+ ~ 0- ~ Omega_CL'
+          assert x['potentially_unbounded_hierarchy'] is True
+          assert x['actual_infinite_physical_compute'] is False
+          assert x['guaranteed_real_world_outcomes'] is False
+          assert len(x['branches']['plus'])==len(x['branches']['minus'])==4
+          PY
