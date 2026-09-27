@@ -1,0 +1,39 @@
+name: Omega Live
+
+on:
+  push:
+    branches: [tm-system-operation-v2]
+    paths:
+      - "unified-utm-api.py"
+      - ".github/workflows/omega-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify live Railway Omega endpoint
+        env:
+          RUNTIME: https://cosmic-love-infinity-tm-production.up.railway.app
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            if curl -fsS "$RUNTIME/omega?depth=4" -o omega.json; then break; fi
+            sleep 3
+          done
+          python3 - <<'PY'
+          import json
+          x=json.load(open('omega.json'))
+          assert x['model']=='BIDIRECTIONAL_OMEGA_COMPACTIFICATION_TM'
+          assert x['depth']==4
+          assert x['substrate']['projection']=='pi(P_k)=P_-1'
+          assert x['compactification']['identification']=='0+ ~ 0- ~ Omega'
+          assert len(x['branches']['plus'])==4 and len(x['branches']['minus'])==4
+          assert x['potentially_unbounded_hierarchy'] is True
+          assert x['actual_infinite_physical_compute'] is False
+          print('PASS live Railway Omega endpoint')
+          PY
