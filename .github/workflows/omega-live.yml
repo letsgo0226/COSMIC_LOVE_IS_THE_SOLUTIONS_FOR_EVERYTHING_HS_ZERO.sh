@@ -14,17 +14,32 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
+      - name: Wait for Railway UTM Universe 1.3
+        env:
+          RUNTIME: https://cosmic-love-infinity-tm-production.up.railway.app
+        run: |
+          set -euo pipefail
+          ok=0
+          for i in $(seq 1 40); do
+            if curl -fsS "$RUNTIME/manifest" -o manifest.json; then
+              if python3 - <<'PY'
+          import json
+          x=json.load(open('manifest.json'))
+          raise SystemExit(0 if x.get('protocol')=='UTM-Universe/1.3' and x.get('search_omega_protocol')=='UTM-Universe/Search-Omega/1' else 1)
+          PY
+              then ok=1; break; fi
+            fi
+            sleep 3
+          done
+          test "$ok" = 1
       - name: Verify live Railway Omega endpoint
         env:
           RUNTIME: https://cosmic-love-infinity-tm-production.up.railway.app
         run: |
           set -euo pipefail
-          for i in $(seq 1 20); do
-            if curl -fsS "$RUNTIME/omega?depth=4" -o omega.json; then break; fi
-            sleep 3
-          done
+          curl -fsS "$RUNTIME/omega?depth=4" -o omega.json
           python3 - <<'PY'
           import json
           x=json.load(open('omega.json'))
@@ -36,4 +51,27 @@ jobs:
           assert x['potentially_unbounded_hierarchy'] is True
           assert x['actual_infinite_physical_compute'] is False
           print('PASS live Railway Omega endpoint')
+          PY
+      - name: Verify deterministic Search-Omega mapping and dereference
+        env:
+          RUNTIME: https://cosmic-love-infinity-tm-production.up.railway.app
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST "$RUNTIME/omega/search" -H 'Content-Type: application/json' \
+            --data '{"query":"Aquinas q.76","result":{"status":200,"url":"https://example.org/q76"},"observed_at":"2026-09-27T14:20:00Z","environment":{"engine":"external-test"}}' \
+            -o search-omega.json
+          OMEGA_URL=$(python3 -c "import json;print(json.load(open('search-omega.json'))['omega_address'])")
+          curl -fsS "$OMEGA_URL" -o search-omega-decoded.json
+          python3 - <<'PY'
+          import json
+          a=json.load(open('search-omega.json')); b=json.load(open('search-omega-decoded.json'))
+          assert a['protocol']=='UTM-Universe/Search-Omega/1'
+          assert a['GOMEGA'].startswith('0x')
+          assert a['hash_function'] is False
+          assert a['GOMEGA']==b['GOMEGA']
+          assert a['query']==b['query']=='Aquinas q.76'
+          assert a['result']==b['result']
+          assert a['observed_at']==b['observed_at']=='2026-09-27T14:20:00Z'
+          assert a['actual_infinite_physical_compute'] is False
+          print('PASS Search-Omega address roundtrip',a['GOMEGA'][:34]+'...')
           PY
