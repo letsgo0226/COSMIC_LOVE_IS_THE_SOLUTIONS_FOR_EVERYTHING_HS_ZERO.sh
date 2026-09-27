@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import base64, hashlib, html, json, os, re
+from datetime import datetime, timezone
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, quote, quote_plus, urlparse
+from urllib.parse import parse_qs, quote_plus, urlparse
 from urllib.request import Request, urlopen
 
 WORLD_ID=os.getenv("WORLD_ID","akashic-utm-main")
@@ -13,6 +14,7 @@ JOURNAL=Path(os.getenv("TM_OPERATION_JOURNAL","/data/cosmic-love-operations.json
 RESIDENTS=Path(os.getenv("RESIDENT_PATH","/data/residents.json"))
 SNAPSHOT_DIR=Path(os.getenv("SNAPSHOT_DIR","/data/utm-address-snapshots"))
 PORT=int(os.getenv("PORT","8080")); MAX_STEPS=int(os.getenv("TM_API_MAX_STEPS","2000")); MAX_BODY=65536; MAXQ=512
+SEARCH_OMEGA_PROTOCOL="UTM-Universe/Search-Omega/1"
 
 def canonical(x): return json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(",",":"),allow_nan=False)
 def rd(path,default):
@@ -30,6 +32,19 @@ def dec(g):
     while n>1:
         n,r=divmod(n,257)
         if not 1<=r<=256:raise ValueError("invalid address")
+        a.append(r-1)
+    return bytes(a[::-1]).decode("utf-8")
+def encx(s):
+    n=1
+    for b in s.encode("utf-8"):n=n*257+b+1
+    return "0x"+format(n,"x")
+def decx(g):
+    if not isinstance(g,str) or not g.startswith("0x"):raise ValueError("invalid omega address")
+    n=int(g,16);a=[]
+    if n<1:raise ValueError("invalid omega address")
+    while n>1:
+        n,r=divmod(n,257)
+        if not 1<=r<=256:raise ValueError("invalid omega address")
         a.append(r-1)
     return bytes(a[::-1]).decode("utf-8")
 def canon(kind,value):
@@ -81,6 +96,17 @@ def search(q,site="",limit=8):
         out.append(u)
         if len(out)>=limit:break
     return out
+def omega_search(q,result,observed_at="",environment=None):
+    if not isinstance(q,str) or not q or len(q)>MAXQ:raise ValueError("invalid query")
+    if not isinstance(observed_at,str) or len(observed_at)>128:raise ValueError("invalid observed_at")
+    if environment is None:environment={}
+    payload={"protocol":SEARCH_OMEGA_PROTOCOL,"world":WORLD_ID,"substrate":"P_-1","query":q,"result":result,"observed_at":observed_at,"environment":environment}
+    c=canonical(payload);gq=enc(q);go=encx(c)
+    return {"protocol":SEARCH_OMEGA_PROTOCOL,"world":WORLD_ID,"substrate":"P_-1","query":q,"result":result,"observed_at":observed_at,"environment":environment,"GQUERY":gq,"GOMEGA":go,"encoding":"reversible-base257-integer/hex-serialization","hash_function":False,"omega":"P_Omega","actual_infinite_physical_compute":False}
+def omega_decode(g):
+    x=json.loads(decx(g))
+    if x.get("protocol")!=SEARCH_OMEGA_PROTOCOL:raise ValueError("not a Search-Omega address")
+    return x
 def logos(states,i="I",p="P",q="Q"):
     S=[x.strip() for x in states.split(",") if x.strip()]
     if not S or any(not re.fullmatch(r"[01]{2}",x) for x in S):raise ValueError("states must be comma-separated PQ bits, e.g. 11,01")
@@ -110,7 +136,9 @@ class H(BaseHTTPRequestHandler):
     def log_message(self,*a):pass
     def base(self):return f"{self.headers.get('X-Forwarded-Proto','https')}://{self.headers.get('Host','')}"
     def out(self,obj,code=200):
-        b=json.dumps(obj,ensure_ascii=False,separators=(",",":")).encode();self.send_response(code);self.send_header("Content-Type","application/json; charset=utf-8");self.send_header("Access-Control-Allow-Origin","*");self.send_header("Cache-Control","no-store");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b)
+        b=json.dumps(obj,ensure_ascii=False,separators=(",",":")).encode();self.send_response(code);self.send_header("Content-Type","application/json; charset=utf-8");self.send_header("Access-Control-Allow-Origin","*");self.send_header("Access-Control-Allow-Headers","Content-Type");self.send_header("Access-Control-Allow-Methods","GET,POST,OPTIONS");self.send_header("Cache-Control","no-store");self.send_header("Content-Length",str(len(b)));self.end_headers();self.wfile.write(b)
+    def do_OPTIONS(self):
+        self.send_response(204);self.send_header("Access-Control-Allow-Origin","*");self.send_header("Access-Control-Allow-Headers","Content-Type");self.send_header("Access-Control-Allow-Methods","GET,POST,OPTIONS");self.end_headers()
     def body(self):
         n=int(self.headers.get("Content-Length","0"))
         if n<1 or n>MAX_BODY:raise ValueError("invalid body length")
@@ -118,12 +146,14 @@ class H(BaseHTTPRequestHandler):
     def address(self,kind,value):
         c=canon(kind,value);g=enc(c);return {"type":kind,"value":value,"canonical":c,"GOBJECT":g,"utm_address":f"{self.base()}/object/{g}"}
     def manifest(self):
-        b=self.base();return {"protocol":"UTM-Universe/1.2","world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"service":"consolidated-utm-runtime","endpoints":{"health":b+"/health","world":b+"/world","akashic":b+"/akashic","run":b+"/utm/run","admit":b+"/resident/admit","address":b+"/address","object":b+"/object/<GOBJECT>","snapshot":b+"/snapshot","search":b+"/search?q=<query>","logos":b+"/logos?states=11,01","omega":b+"/omega?depth=8"}}
+        b=self.base();return {"protocol":"UTM-Universe/1.3","world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"service":"consolidated-utm-runtime","search_omega_protocol":SEARCH_OMEGA_PROTOCOL,"endpoints":{"health":b+"/health","world":b+"/world","akashic":b+"/akashic","run":b+"/utm/run","admit":b+"/resident/admit","address":b+"/address","object":b+"/object/<GOBJECT>","snapshot":b+"/snapshot","search":b+"/search?q=<query>","search_omega_live":b+"/omega/search?q=<query>","search_omega_post":b+"/omega/search","search_omega_decode":b+"/omega/search/<GOMEGA>","logos":b+"/logos?states=11,01","omega":b+"/omega?depth=8"}}
+    def decorate_omega(self,x):
+        x=dict(x);x["query_address"]=f"{self.base()}/search/{x['GQUERY']}";x["omega_address"]=f"{self.base()}/omega/search/{x['GOMEGA']}";return x
     def do_GET(self):
         u=urlparse(self.path);p=parse_qs(u.query)
         try:
             if u.path in ("/","/.well-known/utm-universe.json","/manifest"):return self.out(self.manifest())
-            if u.path=="/health":return self.out({"ok":1,"world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"runtime":"consolidated"})
+            if u.path=="/health":return self.out({"ok":1,"world_id":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"runtime":"consolidated","protocol":"UTM-Universe/1.3"})
             if u.path=="/world":return self.out({"world":WORLD_ID,"planet":PLANET_ID,"city":REGION_ID,"state":rd(STATE,{})})
             if u.path=="/akashic":
                 try:rows=[json.loads(x) for x in JOURNAL.read_text().splitlines()[-20:] if x.strip()]
@@ -139,6 +169,11 @@ class H(BaseHTTPRequestHandler):
                 x=rd(path,{});x["snapshot_address"]=f"{self.base()}/snapshot/{gs}";return self.out(x)
             if u.path=="/logos":return self.out(logos(p.get("states",["11"])[0],p.get("i",["I"])[0],p.get("p",["P"])[0],p.get("q",["Q"])[0]))
             if u.path=="/omega":return self.out(omega(p.get("depth",["8"])[0]))
+            if u.path=="/omega/search":
+                q=p.get("q",[""])[0];site=p.get("site",[""])[0];limit=max(1,min(int(p.get("limit",["4"])[0]),6))
+                r=search(q,site,limit);obs=datetime.now(timezone.utc).isoformat().replace("+00:00","Z");x=omega_search(q,r,obs,{"engine":"duckduckgo-html","site":site,"limit":limit,"mode":"live"});return self.out(self.decorate_omega(x))
+            if u.path.startswith("/omega/search/"):
+                g=u.path.split("/",3)[3];x=omega_decode(g);r=omega_search(x["query"],x.get("result"),x.get("observed_at",""),x.get("environment",{}));return self.out(self.decorate_omega(r))
             if u.path=="/search":q=p.get("q",[""])[0]
             elif u.path.startswith("/search/"):q=dec(u.path.split("/",2)[2])
             else:
@@ -156,6 +191,9 @@ class H(BaseHTTPRequestHandler):
             if u.path=="/address":
                 if not isinstance(x,dict):raise ValueError("body must be JSON object")
                 return self.out(self.address(x.get("type","json"),x.get("value")))
+            if u.path=="/omega/search":
+                if not isinstance(x,dict):raise ValueError("body must be JSON object")
+                r=omega_search(x.get("query",""),x.get("result"),x.get("observed_at",""),x.get("environment",{}));return self.out(self.decorate_omega(r),201)
             if u.path=="/snapshot":
                 r=make_snapshot(str(x.get("GOBJECT","")),x.get("version",""),x.get("result"));r=dict(r);r["snapshot_address"]=f"{self.base()}/snapshot/{r['GSNAPSHOT']}";return self.out(r,201)
             if u.path=="/utm/run":return self.out(tm(x.get("program",""),x.get("input",""),x.get("limit",1000)))
