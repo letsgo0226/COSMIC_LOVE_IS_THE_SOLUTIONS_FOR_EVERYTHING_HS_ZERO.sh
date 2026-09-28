@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json
+import argparse, json, sys
+
+if hasattr(sys, "set_int_max_str_digits"):
+    sys.set_int_max_str_digits(0)
 
 MODEL = "COSMIC_LOVE_BIDIRECTIONAL_OMEGA_V1"
 BUBBLE_PROTOCOL = "UTM-Bubble-Singularity/1"
