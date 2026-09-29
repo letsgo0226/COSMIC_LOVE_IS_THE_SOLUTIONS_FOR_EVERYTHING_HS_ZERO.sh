@@ -1,0 +1,67 @@
+name: Production UTM Deployment Gateway
+
+on:
+  push:
+    branches: [tm-system-operation-v2]
+    paths:
+      - "unified-utm-api.py"
+      - "unified-utm-api-v2.py"
+      - "utm-deployment-gateway-policy.json"
+      - "utm-total-goal-registry.json"
+      - "Dockerfile"
+      - ".github/workflows/DEPLOYMENT_GATEWAY.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile gateway
+        run: python3 -m py_compile unified-utm-api.py unified-utm-api-v2.py
+      - name: Run gateway and verify guarded flow
+        env:
+          PORT: "18080"
+          LOG_TM_STATE: /tmp/cosmic-state.json
+          TM_OPERATION_JOURNAL: /tmp/cosmic-operations.jsonl
+          RESIDENT_PATH: /tmp/residents.json
+          SNAPSHOT_DIR: /tmp/utm-snapshots
+          UTM_DEPLOY_PROPOSAL_DIR: /tmp/utm-deploy-proposals
+          UTM_DEPLOY_POLICY: ./utm-deployment-gateway-policy.json
+          UTM_TOTAL_GOAL_REGISTRY: ./utm-total-goal-registry.json
+        run: |
+          set -euo pipefail
+          python3 -u unified-utm-api-v2.py >/tmp/gateway.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          python3 - <<'PY'
+          import json,time,urllib.request,urllib.error
+          base='http://127.0.0.1:18080'
+          for _ in range(30):
+              try:
+                  entry=json.load(urllib.request.urlopen(base+'/deploy/entry',timeout=1));break
+              except Exception:time.sleep(.1)
+          else:raise SystemExit('gateway did not start')
+          assert entry['protocol']=='UTM-Guarded-Deployment-Gateway/1.0'
+          assert entry['policy']['continuation']['potentially_unbounded'] is True
+          assert entry['policy']['continuation']['actual_infinite_physical_compute'] is False
+          p=entry['proposal_template'];p['request_id']='ci-valid';p['target']='future-setting';p['settings']={'replicas':1,'healthcheck':'/health'}
+          req=urllib.request.Request(base+'/deploy/propose',data=json.dumps(p).encode(),headers={'Content-Type':'application/json'},method='POST')
+          cert=json.load(urllib.request.urlopen(req,timeout=3))
+          assert cert['verified'] is True and cert['status']=='VERIFIED_FOR_AUTHORIZED_EXTERNAL_APPLY'
+          d=cert['proposal_digest'];stored=json.load(urllib.request.urlopen(base+'/deploy/proposal/'+d,timeout=3));assert stored['proposal_digest']==d and stored['proposal']==p
+          bad=json.loads(json.dumps(p));bad['request_id']='ci-bad';bad['parent_digest']='0'*64;bad['settings']={'command':'echo hacked'}
+          req=urllib.request.Request(base+'/deploy/propose',data=json.dumps(bad).encode(),headers={'Content-Type':'application/json'},method='POST')
+          try:urllib.request.urlopen(req,timeout=3);raise AssertionError('tampered proposal unexpectedly accepted')
+          except urllib.error.HTTPError as e:
+              assert e.code==422;x=json.loads(e.read());assert x['verified'] is False;assert 'parent_digest_mismatch' in x['reasons'];assert any(r.startswith('forbidden_key:') for r in x['reasons'])
+          req=urllib.request.Request(base+'/deploy/apply',data=b'{}',headers={'Content-Type':'application/json'},method='POST')
+          try:urllib.request.urlopen(req,timeout=3);raise AssertionError('direct apply unexpectedly enabled')
+          except urllib.error.HTTPError as e:assert e.code==403
+          manifest=json.load(urllib.request.urlopen(base+'/manifest',timeout=3));assert manifest['protocol']=='UTM-Universe/1.4';assert manifest['deployment_gateway']['external_apply_required'] is True
+          print('PASS production guarded deployment gateway')
+          PY
