@@ -5,7 +5,7 @@ Keeps the existing dovetail engine and continuation checkpoint semantics while
 replacing its goal registry with UTM-Omega-Total-Goal-Kernel/2.0. Existing
 stage progress is migrated in place when the protocol is unchanged.
 """
-import importlib.util, json, os
+import importlib.util, json, os, sys
 from pathlib import Path
 
 BASE=Path(__file__).with_name("utm-omega-goal-worker.py")
@@ -13,6 +13,7 @@ REGISTRY_PATH=Path(os.getenv("UTM_TOTAL_GOAL_REGISTRY",Path(__file__).with_name(
 
 spec=importlib.util.spec_from_file_location("utm_omega_core",BASE)
 core=importlib.util.module_from_spec(spec)
+sys.modules[spec.name]=core
 spec.loader.exec_module(core)
 REG=json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 core.GOALS=REG["layers"]
