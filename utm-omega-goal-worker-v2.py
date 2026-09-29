@@ -20,6 +20,7 @@ core.GOALS=REG["layers"]
 
 _orig_default=core.default_state
 _orig_load=core.load_state
+_orig_publish=core.publish
 
 def goal_registry():
     return {
@@ -54,6 +55,14 @@ def default_state():
 def load_state():
     return inject(_orig_load())
 
+def publish(state):
+    _orig_publish(state)
+    n=int(state.get("stage",0))
+    if n<=3 or n%50==0:
+        print(json.dumps({"event":"UTM_OMEGA_RESIDENT_PUBLISHED","agent_id":core.AGENT_ID,"stage":n,"kernel":REG["kernel"],"declared_item_count":REG["declared_item_count"],"sdg_goal_count":REG["sdg"]["goal_count"],"sdg_target_count":REG["sdg"]["target_count"],"C_target":state["goal_registry"]["C_target"],"actual_infinite_physical_compute":False},separators=(",",":")),flush=True)
+
 core.default_state=default_state
 core.load_state=load_state
+core.publish=publish
+print(json.dumps({"event":"UTM_OMEGA_TOTAL_REGISTRY_READY","kernel":REG["kernel"],"declared_item_count":REG["declared_item_count"],"layers":len(REG["layers"]),"sdg_goal_count":REG["sdg"]["goal_count"],"sdg_target_count":REG["sdg"]["target_count"],"potentially_unbounded":True,"actual_infinite_physical_compute":False},separators=(",",":")),flush=True)
 core.main()
