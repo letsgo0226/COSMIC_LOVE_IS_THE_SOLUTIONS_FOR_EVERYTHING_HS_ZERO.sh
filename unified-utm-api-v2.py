@@ -4,10 +4,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
-BASE=Path(__file__).with_name('unified-utm-api.py')
+HERE=Path(__file__).parent
+BASE=HERE/'unified-utm-api.py'
 spec=importlib.util.spec_from_file_location('unified_utm_base',BASE)
 core=importlib.util.module_from_spec(spec);spec.loader.exec_module(core)
-POLICY_PATH=Path(os.getenv('UTM_DEPLOY_POLICY',Path(__file__).with_name('utm-deployment-gateway-policy.json')))
+POLICY_PATH=Path(os.getenv('UTM_DEPLOY_POLICY',HERE/'utm-deployment-gateway-policy.json'))
+REGISTRY_PATH=Path(os.getenv('UTM_TOTAL_GOAL_REGISTRY',HERE/'utm-total-goal-registry.json'))
 PROPOSAL_DIR=Path(os.getenv('UTM_DEPLOY_PROPOSAL_DIR','/data/utm-deploy-proposals'))
 POLICY=json.loads(POLICY_PATH.read_text(encoding='utf-8'))
 FORBIDDEN=set(POLICY['forbidden_keys'])
@@ -15,9 +17,12 @@ SECRET_RE=re.compile(r'(password|passwd|secret|token|api[_-]?key|private[_-]?key
 
 def canonical(x):return json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False)
 def sha(x):return hashlib.sha256(canonical(x).encode()).hexdigest()
+def file_sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def now():return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def anchor():
-    a={'world_id':core.WORLD_ID,'kernel':'UTM-Omega-Total-Goal-Kernel/2.2','source_commit':os.getenv('RAILWAY_GIT_COMMIT_SHA','unknown'),'source_branch':os.getenv('RAILWAY_GIT_BRANCH','tm-system-operation-v2'),'service':'cosmic-love-infinity-tm'}
+    components={'base_api_sha256':file_sha(BASE),'gateway_api_sha256':file_sha(__file__),'policy_sha256':file_sha(POLICY_PATH),'registry_sha256':file_sha(REGISTRY_PATH)}
+    artifact_revision=sha(components)
+    a={'world_id':core.WORLD_ID,'kernel':'UTM-Omega-Total-Goal-Kernel/2.2','service':'cosmic-love-infinity-tm','artifact_revision':artifact_revision,'components':components}
     a['digest']=sha(a);return a
 
 def walk_settings(x,reasons,path='settings'):
@@ -36,7 +41,7 @@ def verify_proposal(p):
     for k in POLICY['required_fields']:
         if k not in p:reasons.append('missing:'+k)
     if p.get('action') not in POLICY['allowed_actions']:reasons.append('action_not_allowed')
-    if str(p.get('base_revision',''))!=str(a['source_commit']):reasons.append('base_revision_mismatch')
+    if str(p.get('base_revision',''))!=a['artifact_revision']:reasons.append('base_revision_mismatch')
     if str(p.get('parent_digest',''))!=a['digest']:reasons.append('parent_digest_mismatch')
     if not isinstance(p.get('settings'),dict):reasons.append('settings_not_object')
     cert=p.get('condition_certificate',{})
@@ -64,7 +69,7 @@ class H(core.H):
         u=urlparse(self.path)
         try:
             if u.path=='/deploy/entry':
-                a=anchor();tmpl={'request_id':'<unique-id>','target':'<deployment-or-setting>','action':'configure','base_revision':a['source_commit'],'parent_digest':a['digest'],'settings':{},'condition_certificate':POLICY['condition_certificate']}
+                a=anchor();tmpl={'request_id':'<unique-id>','target':'<deployment-or-setting>','action':'configure','base_revision':a['artifact_revision'],'parent_digest':a['digest'],'settings':{},'condition_certificate':POLICY['condition_certificate']}
                 return self.out({'protocol':POLICY['protocol'],'world_id':core.WORLD_ID,'anchor':a,'policy':POLICY,'proposal_template':tmpl,'continuation_entry':self.base()+'/resident/utm-omega-goal-solver','apply_semantics':'certificate first; authenticated GitHub/Railway adapter second'})
             if u.path.startswith('/deploy/proposal/'):
                 d=u.path.split('/',3)[3]
