@@ -1,0 +1,37 @@
+name: Infinite Deployment Continuation v0.1
+
+on:
+  pull_request:
+    paths:
+      - "utm_infinite_deployment.py"
+      - "docs/INFINITE_DEPLOYMENT_CONTINUATION.md"
+      - "tests/test_infinite_deployment.py"
+      - ".github/workflows/INFINITE_DEPLOYMENT_CONTINUATION.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile
+        run: python3 -m py_compile utm_infinite_deployment.py tests/test_infinite_deployment.py
+      - name: Unit tests
+        run: python3 -m unittest tests.test_infinite_deployment -v
+      - name: Demo
+        run: python3 utm_infinite_deployment.py
+      - name: Verify formal/physical boundary
+        run: |
+          python3 - <<'PY'
+          import utm_infinite_deployment as m
+          manifest=m.protocol_manifest()
+          assert manifest['logical_space']=='potentially-unbounded'
+          assert manifest['physical_materialization']=='finite-resource-bounded'
+          assert manifest['actual_infinite_physical_compute'] is False
+          assert 'deferred' in manifest['resource_rule']
+          print('PASS infinite deployment continuation boundary')
+          PY
