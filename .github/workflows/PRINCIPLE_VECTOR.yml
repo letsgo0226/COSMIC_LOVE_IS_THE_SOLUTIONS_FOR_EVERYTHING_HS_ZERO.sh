@@ -1,0 +1,38 @@
+name: Principle Vector v0.1
+
+on:
+  pull_request:
+    branches: [tm-system-operation-v2]
+    paths:
+      - "utm_principle_vector.py"
+      - "docs/PRINCIPLE_VECTOR_SPEC.md"
+      - "tests/test_principle_vector.py"
+      - ".github/workflows/PRINCIPLE_VECTOR.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile formal layer
+        run: python3 -m py_compile utm_principle_vector.py tests/test_principle_vector.py
+      - name: Run unit tests
+        run: python3 -m unittest -v tests/test_principle_vector.py
+      - name: Run demo
+        run: python3 utm_principle_vector.py >/tmp/principle-vector-demo.txt
+      - name: Assert observe-only boundary
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('utm_principle_vector.py').read_text()
+          spec=Path('docs/PRINCIPLE_VECTOR_SPEC.md').read_text()
+          assert '/data/cosmic-love-state.json' not in src
+          assert 'empirical_claim = false' in spec
+          assert 'observe-only' in spec.lower()
+          print('PASS observe-only principle-vector boundary')
+          PY
