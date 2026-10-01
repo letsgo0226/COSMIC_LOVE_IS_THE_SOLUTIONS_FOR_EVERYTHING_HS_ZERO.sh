@@ -58,3 +58,50 @@ This encodes committed runtime operations, not a claim of physical or cosmologic
 ### Container runtime
 
 The Docker build runs a two-step transactional self-test before the image is accepted. The deployed container then continuously commits verified `STEP` operations at `POLL_SECONDS=2` unless `TM_MAX_STEPS` is set to a positive finite value.
+
+## Compactified Infinite Deployment Semantics
+
+The deployment gateway now documents three explicit **hypothetical formal axioms** for potentially-unbounded logical continuation over finite materialization substrates:
+
+```text
+A1  pi(P_k) = P_-1
+    finite-substrate projection
+
+A2  C_hat(P_k) = C0
+    normalized-resource invariant
+
+A3  u_k = sgn(k)/|k|,
+    k -> +infinity => 0+,
+    k -> -infinity => 0-,
+    0+ ~ 0- ~ Omega
+    bidirectional Omega compactification
+```
+
+Their deployment interpretation is:
+
+```text
+potentially-unbounded logical continuation
+        -> finite projection
+        -> finite resource check
+        -> external authorization check
+        -> authenticated materialization
+        -> feedback
+```
+
+These axioms do **not** assert infinite physical computation, hardware, energy, or platform privilege. `Internal computability != external authority`: GitHub/Railway ACLs remain external conditions and cannot be bypassed by a UTM certificate.
+
+The runtime policy exposes this model under:
+
+```text
+continuation.compactified_infinite_deployment
+```
+
+with the required boundary:
+
+```text
+potentially_unbounded = true
+actual_infinite_physical_compute = false
+materialization = lazy-finite-authorized
+```
+
+Materialization may be `DEFERRED_RESOURCE_UNAVAILABLE` or `AUTHORIZATION_BLOCKED` without erasing the certified logical continuation. See `docs/INFINITE_DEPLOYMENT_CONTINUATION.md` for the complete formal interpretation, Towel/Secret/Immortality gates, and the No Final Deployment Axiom.
