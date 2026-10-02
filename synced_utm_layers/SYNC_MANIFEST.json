@@ -1,0 +1,21 @@
+{
+  "protocol":"UTM-Cross-Conversation-Code-Sync/1.0",
+  "world_id":"akashic-utm-main",
+  "source":{"repo":"letsgo0226/UTM.sh","branch":"main","commit":"31087e34e32ab0d5d44904538b5fb29ad47c62fb","verified_workflow":{"name":"Log Abelian UTM","run_number":35,"conclusion":"success"}},
+  "selection_policy":"code-confirmed-and-merged-only",
+  "included":[
+    "UTM-Log-Abelian-Representation/1.2",
+    "UTM-Three-Universe-Axiom-Layer/1.0",
+    "UTM-Omega-Unbounded-Compute/1.0"
+  ],
+  "excluded_semantics":[
+    "unmerged chat-only claims",
+    "Hee-Yuu/Hu semantics not present in the pinned source commit",
+    "actual infinite physical compute",
+    "oracle or hypercomputation",
+    "automatic platform privilege"
+  ],
+  "relationship_to_existing_compactified_axioms":"coexisting formal layers; the imported Three-Universe A1/A2/A3 do not overwrite Compactified Infinite Deployment A1/A2/A3",
+  "external_apply_required":true,
+  "actual_infinite_physical_compute":false
+}

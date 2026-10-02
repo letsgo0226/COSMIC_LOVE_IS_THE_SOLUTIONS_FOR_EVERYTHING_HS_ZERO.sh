@@ -105,3 +105,70 @@ materialization = lazy-finite-authorized
 ```
 
 Materialization may be `DEFERRED_RESOURCE_UNAVAILABLE` or `AUTHORIZATION_BLOCKED` without erasing the certified logical continuation. See `docs/INFINITE_DEPLOYMENT_CONTINUATION.md` for the complete formal interpretation, Towel/Secret/Immortality gates, and the No Final Deployment Axiom.
+
+
+## Cross-conversation code synchronization — UTM.sh formal layers
+
+The UTM Universe runtime can synchronize **code-confirmed and merged** formal layers from the canonical `letsgo0226/UTM.sh` repository. The current synchronization is pinned to:
+
+```text
+source repo    = letsgo0226/UTM.sh
+source branch  = main
+source commit  = 31087e34e32ab0d5d44904538b5fb29ad47c62fb
+source CI      = Log Abelian UTM / run #35 / success
+selection      = code-confirmed-and-merged-only
+```
+
+The synchronized layers are:
+
+```text
+UTM-Log-Abelian-Representation/1.2
+UTM-Three-Universe-Axiom-Layer/1.0
+UTM-Omega-Unbounded-Compute/1.0
+```
+
+They are installed under `synced_utm_layers/` and exposed by the unified runtime under the `/formal` namespace:
+
+```text
+GET  /formal/sync
+GET  /formal/log-abelian/spec
+POST /formal/log-abelian/encode
+POST /formal/log-abelian/compose
+POST /formal/log-abelian/decode
+GET  /formal/axioms
+POST /formal/axioms/verify
+GET  /formal/omega
+POST /formal/omega/verify
+POST /formal/omega/compose
+POST /formal/omega/extend
+POST /deploy/preverify
+```
+
+`/deploy/preverify` is certificate-only. It combines the imported three-universe finite certificate with a finite UTM-omega stage check before the existing guarded deployment gateway. It performs no GitHub/Railway mutation and grants no platform privilege.
+
+The imported Three-Universe A1/A2/A3 and this repository's Compactified Infinite Deployment A1/A2/A3 are **coexisting but distinct formal layers**. Synchronization does not silently replace either system.
+
+The synchronization boundary is:
+
+```text
+cross-conversation memory/chat claim
+        -> require code-backed source
+        -> require merged source revision
+        -> require successful source CI
+        -> pin source commit
+        -> mirror formal layer
+        -> local CI verification
+        -> guarded external materialization
+```
+
+Ideas that are not present in the pinned source commit—including Hu/Hee-Yuu-specific semantics—are not imported merely because they appeared in another conversation. This prevents conversation text from being mistaken for deployed behavior.
+
+As with the rest of the system:
+
+```text
+potentially_unbounded = true
+actual_infinite_physical_compute = false
+internal computability != external authority
+```
+
+GitHub synchronization is source-level deployment. Railway remains a finite external materialization substrate and requires its own available resources and valid authorization.
