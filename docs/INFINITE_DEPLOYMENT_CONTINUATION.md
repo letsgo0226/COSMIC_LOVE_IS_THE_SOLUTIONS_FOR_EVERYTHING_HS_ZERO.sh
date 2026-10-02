@@ -186,3 +186,19 @@ Three-Universe finite certificate
 ```
 
 No synchronized certificate grants GitHub, Railway, Dropbox, shell, or host privilege; no oracle or hypercomputation is introduced; and `actual_infinite_physical_compute=false` remains invariant.
+
+## UTM-Omega internal admission
+
+A certified logical continuation may additionally enter the formal state `OMEGA_ADMITTED` when its resident registry is verified as a valid finite `UTM-Omega-Unbounded-Compute/1.0` stage.
+
+This adds a state between verification and external materialization:
+
+```text
+PROPOSE -> VERIFY -> OMEGA_ADMITTED -> READY_FOR_AUTHORIZED_EXTERNAL_APPLY -> PHYSICALLY_MATERIALIZED
+```
+
+`OMEGA_ADMITTED` means that the module is represented as a resident in the canonical formal UTM-Omega state. It does not mean that an actually infinite computation has run, and it does not mean a Railway deployment exists.
+
+The resident continuation is modeled by finite stages `C_0 -> C_1 -> C_2 -> ...`; `C_omega` is the symbolic/direct-limit horizon. Every executed stage has a finite resource budget, no oracle, and preserves the existing external-authorization boundary.
+
+See `docs/UTM_OMEGA_RESIDENT_DEPLOYMENT.md` and `utm_omega_residents.json`.
