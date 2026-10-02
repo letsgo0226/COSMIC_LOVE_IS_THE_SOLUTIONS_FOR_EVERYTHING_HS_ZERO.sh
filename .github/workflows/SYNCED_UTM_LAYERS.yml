@@ -37,7 +37,7 @@ jobs:
           import json
           p=json.load(open('utm-deployment-gateway-policy.json'))
           m=json.load(open('synced_utm_layers/SYNC_MANIFEST.json'))
-          assert p['protocol']=='UTM-Guarded-Deployment-Gateway/1.2'
+          assert p['protocol']=='UTM-Guarded-Deployment-Gateway/1.3'
           assert p['synchronized_formal_layers']['source_commit']==m['source']['commit']
           assert m['source']['verified_workflow']['conclusion']=='success'
           assert m['selection_policy']=='code-confirmed-and-merged-only'
