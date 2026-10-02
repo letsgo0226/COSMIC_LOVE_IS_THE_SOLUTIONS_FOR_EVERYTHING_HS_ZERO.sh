@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from synced_utm_layers import log_abelian as sync_log
 from synced_utm_layers import axiom_verifier as sync_axioms
 from synced_utm_layers import omega_verifier as sync_omega
+import utm_omega_resident as omega_resident
 
 HERE=Path(__file__).parent
 BASE=HERE/'unified-utm-api.py'
@@ -22,6 +23,8 @@ SYNC_MANIFEST=json.loads(SYNC_MANIFEST_PATH.read_text(encoding='utf-8'))
 SYNC_AXIOM_PATH=SYNC_DIR/'axioms'/'THREE_UNIVERSE_AXIOMS.json'
 SYNC_OMEGA_PATH=SYNC_DIR/'omega'/'UTM_OMEGA_UNBOUNDED_COMPUTE.json'
 SYNC_LOG_PATH=SYNC_DIR/'log_abelian.py'
+OMEGA_RESIDENT_REGISTRY_PATH=HERE/'utm_omega_residents.json'
+OMEGA_RESIDENT_MODULE_PATH=HERE/'utm_omega_resident.py'
 FORBIDDEN=set(POLICY['forbidden_keys'])
 SECRET_RE=re.compile(r'(password|passwd|secret|token|api[_-]?key|private[_-]?key)',re.I)
 
@@ -30,7 +33,7 @@ def sha(x):return hashlib.sha256(canonical(x).encode()).hexdigest()
 def file_sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def now():return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def anchor():
-    components={'base_api_sha256':file_sha(BASE),'gateway_api_sha256':file_sha(__file__),'policy_sha256':file_sha(POLICY_PATH),'registry_sha256':file_sha(REGISTRY_PATH),'sync_manifest_sha256':file_sha(SYNC_MANIFEST_PATH),'sync_axioms_sha256':file_sha(SYNC_AXIOM_PATH),'sync_omega_sha256':file_sha(SYNC_OMEGA_PATH),'sync_log_abelian_sha256':file_sha(SYNC_LOG_PATH)}
+    components={'base_api_sha256':file_sha(BASE),'gateway_api_sha256':file_sha(__file__),'policy_sha256':file_sha(POLICY_PATH),'registry_sha256':file_sha(REGISTRY_PATH),'sync_manifest_sha256':file_sha(SYNC_MANIFEST_PATH),'sync_axioms_sha256':file_sha(SYNC_AXIOM_PATH),'sync_omega_sha256':file_sha(SYNC_OMEGA_PATH),'sync_log_abelian_sha256':file_sha(SYNC_LOG_PATH),'omega_resident_registry_sha256':file_sha(OMEGA_RESIDENT_REGISTRY_PATH),'omega_resident_module_sha256':file_sha(OMEGA_RESIDENT_MODULE_PATH)}
     artifact_revision=sha(components)
     a={'world_id':core.WORLD_ID,'kernel':'UTM-Omega-Total-Goal-Kernel/2.2','service':'cosmic-love-infinity-tm','artifact_revision':artifact_revision,'components':components}
     a['digest']=sha(a);return a
@@ -95,7 +98,7 @@ def store_proposal(p):
 
 class H(core.H):
     def manifest(self):
-        x=super().manifest();b=self.base();x['protocol']='UTM-Universe/1.4';x['deployment_gateway']={'protocol':POLICY['protocol'],'entry':b+'/deploy/entry','preverify':b+'/deploy/preverify','propose':b+'/deploy/propose','proposal':b+'/deploy/proposal/<sha256>','continuation_solver':b+'/resident/utm-omega-goal-solver','external_apply_required':True};x['synchronized_formal_layers']={'protocol':SYNC_MANIFEST['protocol'],'source':SYNC_MANIFEST['source'],'formal_api_prefix':b+'/formal','actual_infinite_physical_compute':False};return x
+        x=super().manifest();b=self.base();x['protocol']='UTM-Universe/1.4';x['deployment_gateway']={'protocol':POLICY['protocol'],'entry':b+'/deploy/entry','preverify':b+'/deploy/preverify','propose':b+'/deploy/propose','proposal':b+'/deploy/proposal/<sha256>','continuation_solver':b+'/resident/utm-omega-goal-solver','external_apply_required':True};x['synchronized_formal_layers']={'protocol':SYNC_MANIFEST['protocol'],'source':SYNC_MANIFEST['source'],'formal_api_prefix':b+'/formal','actual_infinite_physical_compute':False};x['omega_resident_deployment']={'protocol':omega_resident.PROTOCOL,'state':omega_resident.STATUS,'residents':b+'/formal/omega/residents','admission':b+'/formal/omega/admission','physical_materialization':False};return x
     def do_GET(self):
         u=urlparse(self.path)
         try:
@@ -107,6 +110,10 @@ class H(core.H):
                 sp=sync_axioms.load_spec();return self.out({'spec':sp,'verification':sync_axioms.verify_spec(sp)})
             if u.path=='/formal/omega':
                 sp=sync_omega.load_omega_spec();return self.out({'spec':sp,'verification':sync_omega.verify_omega_spec(sp)})
+            if u.path=='/formal/omega/residents':
+                reg=omega_resident.load_registry();return self.out({'registry':reg,'certificate':omega_resident.verify_registry(reg)})
+            if u.path=='/formal/omega/admission':
+                return self.out(omega_resident.admission_manifest())
             if u.path=='/deploy/entry':
                 a=anchor();tmpl={'request_id':'<unique-id>','target':'<deployment-or-setting>','action':'configure','base_revision':a['artifact_revision'],'parent_digest':a['digest'],'settings':{},'condition_certificate':POLICY['condition_certificate']}
                 return self.out({'protocol':POLICY['protocol'],'world_id':core.WORLD_ID,'anchor':a,'policy':POLICY,'proposal_template':tmpl,'continuation_entry':self.base()+'/resident/utm-omega-goal-solver','apply_semantics':'certificate first; authenticated GitHub/Railway adapter second'})
@@ -135,6 +142,10 @@ class H(core.H):
                 b=self.body();return self.out(sync_omega.verify_abelian_pair(b.get('left',{}),b.get('right',{})))
             if u.path=='/formal/omega/extend':
                 b=self.body();return self.out(sync_omega.verify_stage_extension(b['previous'],b['current']))
+            if u.path=='/formal/omega/residents/verify':
+                b=self.body();return self.out(omega_resident.verify_registry(b.get('registry') or omega_resident.load_registry()))
+            if u.path=='/formal/omega/residents/extend':
+                b=self.body();return self.out(omega_resident.extend_stage(b['previous'],b['current']))
             if u.path=='/deploy/preverify':
                 return self.out(sync_preverify(self.body()))
             if u.path=='/deploy/propose':
