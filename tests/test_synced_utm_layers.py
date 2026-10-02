@@ -48,7 +48,7 @@ class SyncedUTMLayersTests(unittest.TestCase):
 
     def test_policy_registers_synced_layers_without_overwrite(self):
         p=json.loads((ROOT/"utm-deployment-gateway-policy.json").read_text())
-        self.assertEqual(p["protocol"],"UTM-Guarded-Deployment-Gateway/1.2")
+        self.assertEqual(p["protocol"],"UTM-Guarded-Deployment-Gateway/1.3")
         s=p["synchronized_formal_layers"]
         self.assertEqual(s["source_commit"],"31087e34e32ab0d5d44904538b5fb29ad47c62fb")
         self.assertIn("do not overwrite",s["coexistence_rule"])
