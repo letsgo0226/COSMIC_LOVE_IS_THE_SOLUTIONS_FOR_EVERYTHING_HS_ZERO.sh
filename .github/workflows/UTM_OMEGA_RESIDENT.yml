@@ -1,0 +1,50 @@
+name: UTM Omega Resident Deployment
+
+on:
+  pull_request:
+    paths:
+      - 'utm_omega_resident.py'
+      - 'utm_omega_residents.json'
+      - 'unified-utm-api-v2.py'
+      - 'utm-deployment-gateway-policy.json'
+      - 'Dockerfile'
+      - 'docs/UTM_OMEGA_RESIDENT_DEPLOYMENT.md'
+      - 'tests/test_utm_omega_resident.py'
+      - '.github/workflows/UTM_OMEGA_RESIDENT.yml'
+  push:
+    branches: [tm-system-operation-v2]
+    paths:
+      - 'utm_omega_resident.py'
+      - 'utm_omega_residents.json'
+      - 'unified-utm-api-v2.py'
+      - 'utm-deployment-gateway-policy.json'
+      - 'Dockerfile'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile utm_omega_resident.py unified-utm-api-v2.py synced_utm_layers/omega_verifier.py
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p 'test_utm_omega_resident.py' -v
+      - name: Admission certificate
+        run: python utm_omega_resident.py
+      - name: Verify formal infinity boundary
+        run: |
+          python - <<'PY'
+          import json, utm_omega_resident as r
+          c=r.verify_registry()
+          p=json.load(open('utm-deployment-gateway-policy.json'))
+          assert c['verified'] and c['status']=='OMEGA_ADMITTED'
+          assert c['logical_deployment'] is True
+          assert c['physical_materialization'] is False
+          assert c['actual_infinite_physical_compute'] is False
+          assert c['omega_stage_certificate']['omega_limit_reached'] is False
+          assert p['omega_internal_deployment']['actual_infinite_physical_compute'] is False
+          assert p['authorization']['external_apply'].startswith('must be performed')
+          PY

@@ -172,3 +172,47 @@ internal computability != external authority
 ```
 
 GitHub synchronization is source-level deployment. Railway remains a finite external materialization substrate and requires its own available resources and valid authorization.
+
+## UTM-Omega internal resident deployment
+
+The canonical UTM Universe now distinguishes internal formal admission from external platform materialization:
+
+```text
+OMEGA_ADMITTED != PHYSICALLY_MATERIALIZED
+```
+
+The file `utm_omega_residents.json` is the initial resident registry and `utm_omega_resident.py` verifies it as one finite `UTM-Omega-Unbounded-Compute/1.0` stage.
+
+The initial residents are the Principle-Vector layer, Infinite Deployment Continuation protocol, synchronized Log-Abelian representation, synchronized Three-Universe Axiom layer, synchronized UTM-Omega layer, and Compactified Infinite Deployment semantics.
+
+Runtime inspection endpoints are:
+
+```text
+GET  /formal/omega/residents
+GET  /formal/omega/admission
+POST /formal/omega/residents/verify
+POST /formal/omega/residents/extend
+```
+
+The continuation semantics are:
+
+```text
+finite resident stage C_n
+  -> verified later finite stage C_(n+1)
+  -> ...
+  -> symbolic/direct-limit horizon C_omega
+```
+
+Every actually verified stage remains finite. `C_omega` is not treated as an actually completed infinite machine.
+
+Required invariants remain:
+
+```text
+actual_infinite_physical_compute = false
+oracle = null
+hypercomputation_enabled = false
+halting_problem_becomes_decidable = false
+internal computability != external authority
+```
+
+Railway is therefore optional for the **formal OMEGA_ADMITTED state**, but it remains necessary (or must be replaced by another authorized finite host) when a resident is to become a real network service.
