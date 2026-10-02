@@ -1,0 +1,35 @@
+{
+  "protocol":"UTM-Omega-Resident-Registry/1.0",
+  "world_id":"akashic-utm-main",
+  "status":"OMEGA_ADMITTED",
+  "scope":"formal-computation-model-only",
+  "admitted_from_commit":"8fc363606d8634db1a995ff6e40c29b201537f32",
+  "formal_horizon":"omega",
+  "actual_infinite_physical_compute":false,
+  "external_materialization_required_for_network_service":true,
+  "stage":{
+    "stage":1,
+    "resource_budget":1024,
+    "resource_used":6,
+    "valuation":{"0":1,"1":1,"2":1,"3":1,"4":1,"5":1},
+    "oracle":null
+  },
+  "residents":[
+    {"id":"utm-principle-vector-v0.1","kind":"formal-module","path":"utm_principle_vector.py","coordinate":0,"semantics":"Towel/Secret/Immortality, Chronon, IFR","empirical_claim":false},
+    {"id":"utm-infinite-deployment-continuation-v0.2","kind":"formal-deployment-protocol","path":"docs/INFINITE_DEPLOYMENT_CONTINUATION.md","coordinate":1,"semantics":"potentially-unbounded logical continuation with finite authorized materialization","empirical_claim":false},
+    {"id":"utm-log-abelian-representation-v1.2","kind":"formal-module","path":"synced_utm_layers/log_abelian.py","coordinate":2,"semantics":"Abelian representation layer; UTM causal execution remains ordered","empirical_claim":false},
+    {"id":"utm-three-universe-axiom-layer-v1.0","kind":"formal-hypothesis-layer","path":"synced_utm_layers/axioms/THREE_UNIVERSE_AXIOMS.json","coordinate":3,"semantics":"host normalization, host resource invariance, two-sided fixed-point hypothesis","empirical_claim":false},
+    {"id":"utm-omega-unbounded-compute-v1.0","kind":"formal-computation-layer","path":"synced_utm_layers/omega/UTM_OMEGA_UNBOUNDED_COMPUTE.json","coordinate":4,"semantics":"potentially-unbounded sequence of finite executable stages and symbolic direct limit","empirical_claim":false},
+    {"id":"utm-compactified-infinite-deployment-v0.2","kind":"formal-deployment-semantics","path":"utm-deployment-gateway-policy.json","coordinate":5,"semantics":"finite-substrate projection, normalized resource commitment, bidirectional compactification","empirical_claim":false}
+  ],
+  "invariants":{
+    "every_executed_stage_is_finite":true,
+    "no_oracle":true,
+    "hypercomputation_enabled":false,
+    "halting_problem_becomes_decidable":false,
+    "external_authority_not_created":true,
+    "human_override_preserved":true,
+    "authorized_shutdown_preserved":true,
+    "reversibility_or_rollback_preserved":true
+  }
+}
