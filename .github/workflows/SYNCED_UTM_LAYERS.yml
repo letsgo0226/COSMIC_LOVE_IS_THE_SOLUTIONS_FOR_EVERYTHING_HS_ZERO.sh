@@ -1,0 +1,47 @@
+name: Synced UTM Formal Layers
+
+on:
+  pull_request:
+    paths:
+      - 'synced_utm_layers/**'
+      - 'unified-utm-api-v2.py'
+      - 'utm-deployment-gateway-policy.json'
+      - 'Dockerfile'
+      - 'tests/test_synced_utm_layers.py'
+      - '.github/workflows/SYNCED_UTM_LAYERS.yml'
+  push:
+    branches: [tm-system-operation-v2]
+    paths:
+      - 'synced_utm_layers/**'
+      - 'unified-utm-api-v2.py'
+      - 'utm-deployment-gateway-policy.json'
+      - 'Dockerfile'
+      - 'tests/test_synced_utm_layers.py'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile synchronized modules
+        run: |
+          python -m py_compile unified-utm-api-v2.py synced_utm_layers/log_abelian.py synced_utm_layers/axiom_verifier.py synced_utm_layers/omega_verifier.py
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p 'test_synced_utm_layers.py' -v
+      - name: Verify formal and authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('utm-deployment-gateway-policy.json'))
+          m=json.load(open('synced_utm_layers/SYNC_MANIFEST.json'))
+          assert p['protocol']=='UTM-Guarded-Deployment-Gateway/1.2'
+          assert p['synchronized_formal_layers']['source_commit']==m['source']['commit']
+          assert m['source']['verified_workflow']['conclusion']=='success'
+          assert m['selection_policy']=='code-confirmed-and-merged-only'
+          assert m['actual_infinite_physical_compute'] is False
+          assert m['external_apply_required'] is True
+          assert p['continuation']['actual_infinite_physical_compute'] is False
+          PY
