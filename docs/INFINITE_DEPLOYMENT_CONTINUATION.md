@@ -158,3 +158,31 @@ The deployment layer does not reinterpret these as measured physical chakra or c
 ## Boundary
 
 This protocol is a formal/software architecture. The three compactification axioms are model assumptions. They do not create infinite hardware, infinite energy, infinite computation, bypass platform authorization, or establish physical cosmological claims.
+
+## Cross-conversation synchronization layer
+
+The continuation protocol now supports a pinned synchronization of code-confirmed formal layers from `letsgo0226/UTM.sh@31087e34e32ab0d5d44904538b5fb29ad47c62fb`. The source revision merged PR #3 after the `Log Abelian UTM` workflow run #35 completed successfully.
+
+The imported protocols are `UTM-Log-Abelian-Representation/1.2`, `UTM-Three-Universe-Axiom-Layer/1.0`, and `UTM-Omega-Unbounded-Compute/1.0`. Their provenance is recorded in `synced_utm_layers/SYNC_MANIFEST.json`.
+
+This sync obeys an evidence gate:
+
+```text
+chat context -> code-backed source -> merged revision -> successful CI -> pinned mirror
+```
+
+A conversation-only idea is not deployment evidence. In particular, Hu/Hee-Yuu-specific semantics are not imported unless they appear in a future pinned, code-confirmed source revision.
+
+The imported Three-Universe A1/A2/A3 do not overwrite the Compactified Infinite Deployment axioms defined earlier in this document. The former verify a host-normalization/resource-invariance/two-sided-fixed-point hypothesis; the latter define finite-substrate projection, normalized-resource commitment, and bidirectional compactification for deployment continuation.
+
+The runtime pre-gate is:
+
+```text
+Three-Universe finite certificate
+  -> UTM-omega finite-stage certificate
+  -> existing Guarded Deployment Gateway verification
+  -> external authorization
+  -> finite platform materialization
+```
+
+No synchronized certificate grants GitHub, Railway, Dropbox, shell, or host privilege; no oracle or hypercomputation is introduced; and `actual_infinite_physical_compute=false` remains invariant.
