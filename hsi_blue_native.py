@@ -73,6 +73,16 @@ def main():
             "forced_totalization":False,
             "may_authorize_domain_action":False,
             "may_force_commit":False
+        },
+        "solve_operator":{
+            "protocol":"HSI-SOLVE/1.0",
+            "role":"finite-domain-solver",
+            "solver_may_claim_universal_solution":False,
+            "unresolved_is_valid":True,
+            "verification_closure_is_not_problem_totality":True,
+            "domain_rule":"finite_evidence_no_forced_commit",
+            "may_authorize_domain_action":False,
+            "may_force_commit":False
         }
     }
     if SYSTEM=="TRADER_42":
