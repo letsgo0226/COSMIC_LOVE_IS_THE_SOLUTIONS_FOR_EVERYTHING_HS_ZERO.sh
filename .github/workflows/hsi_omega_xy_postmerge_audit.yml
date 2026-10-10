@@ -1,0 +1,58 @@
+name: Omega HSI CL XY post-merge source audit
+on:
+  pull_request:
+    branches: [hsi-three-system-v1]
+    paths:
+      - '.github/workflows/hsi_omega_xy_postmerge_audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify finite core and XY shell
+        run: |
+          python3 -m unittest discover -s hsi_common -p test_core.py -v
+          sh -n hsi_xy_analytic_2k/hsi_cl_xy_2k.sh
+          test "$(wc -c < hsi_xy_analytic_2k/hsi_cl_xy_2k.sh)" -lt 2048
+      - name: Verify Omega UNRESOLVED witness and no forced totality
+        run: |
+          set -eu
+          HSI_OUT="$RUNNER_TEMP/hsi-omega-proof" PYTHONPATH=hsi_common python3 hsi_blue_native.py "finite runtime context"
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,os
+          p=Path(os.environ['RUNNER_TEMP'])/'hsi-omega-proof'
+          c=json.loads((p/'certificate.json').read_text())
+          b=json.loads((p/'blue-care.json').read_text())
+          r=json.loads((p/'request.json').read_text())
+          assert r['system']=='OMEGA' and r['status']=='UNRESOLVED'
+          assert c['closed']==1 and c['claims']['rh_proof']==0
+          assert b['unresolved_is_valid'] is True
+          assert b['forced_totalization'] is False
+          assert b['solve_operator']['may_force_commit'] is False
+          print('Omega source proof passed; not a Railway runtime health assertion')
+          PY
+      - name: Verify XY valid and invalid successor
+        run: |
+          set -eu
+          HSI_STATE="$RUNNER_TEMP/xy-ok.state" HSI_PROGRAM=2 HSI_WORD=1 sh hsi_xy_analytic_2k/hsi_cl_xy_2k.sh > "$RUNNER_TEMP/xy-ok.json"
+          HSI_STATE="$RUNNER_TEMP/xy-bad.state" HSI_PROGRAM=2 HSI_WORD=1 HSI_CAND='[99,0,[]]' sh hsi_xy_analytic_2k/hsi_cl_xy_2k.sh > "$RUNNER_TEMP/xy-bad.json"
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,os
+          p=Path(os.environ['RUNNER_TEMP'])
+          good=json.loads((p/'xy-ok.json').read_text())
+          bad=json.loads((p/'xy-bad.json').read_text())
+          assert good['accepted']==1 and good['D0']==0
+          assert bad['accepted']==0 and bad['D0']>0
+          assert json.loads((p/'xy-ok.state').read_text())['n']==1
+          assert json.loads((p/'xy-bad.state').read_text())['n']==0
+          print('XY/2K finite certificate tests passed, no domain action')
+          PY
